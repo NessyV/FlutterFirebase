@@ -14,7 +14,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     Future.delayed(
-        Duration(seconds: 2),(){
+        Duration(seconds: 5),(){
       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => widget.child!), (route) => false);
     }
     );
@@ -26,12 +26,24 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Text(
-          "Welcome To Flutter Firebase",
-          style: TextStyle(
-            color: Colors.blue,
-            fontWeight: FontWeight.bold,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+
+            Text(
+              "Welcome To Waste Tracker",
+              style: TextStyle(
+                color: Colors.blue,
+                fontWeight: FontWeight.bold, fontSize: 16,
+              ),
+            ),
+            SizedBox(height: 15,),
+            Container(
+              width: 200,
+              child:
+              LinearProgressIndicator(color: Colors.blue,),
+            ),
+          ],
         ),
       ),
     );
