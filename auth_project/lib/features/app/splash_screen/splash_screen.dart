@@ -33,7 +33,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               "Welcome To Waste Tracker",
               style: TextStyle(
-                color: Colors.blue,
+                color: Colors.green,
                 fontWeight: FontWeight.bold, fontSize: 16,
               ),
             ),
@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               width: 200,
               child:
-              LinearProgressIndicator(color: Colors.blue,),
+              LinearProgressIndicator(color: Colors.green,),
             ),
           ],
         ),
