@@ -18,7 +18,18 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _WasteSourceController = TextEditingController();
   final TextEditingController _WasteVolume = TextEditingController();
   final TextEditingController _Wastedesc = TextEditingController();
-  WasteModel? selectedWasteModel; // To store the selected waste for editing
+  final TextEditingController _searchController =
+      TextEditingController(); // Search controller
+  WasteModel? selectedWasteModel;
+
+  List<WasteModel> _wasteData = []; // List to store all waste data
+  List<WasteModel> _filteredWaste = []; // List to store filtered waste data
+
+  @override
+  void initState() {
+    super.initState();
+    _readData(); // Fetch initial data
+  }
 
   @override
   void dispose() {
@@ -26,6 +37,7 @@ class _HomePageState extends State<HomePage> {
     _WasteSourceController.dispose();
     _WasteVolume.dispose();
     _Wastedesc.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -54,7 +66,9 @@ class _HomePageState extends State<HomePage> {
                   child: Text(
                     "Log Out",
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12),
                   ),
                 ),
               ),
@@ -70,15 +84,19 @@ class _HomePageState extends State<HomePage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(15),
-            boxShadow: [BoxShadow(
-              color: Color.fromARGB(35, 72, 72, 1),
-              offset: Offset(0,0),
-              blurRadius: 15.0,
-            )]
+            boxShadow: [
+              BoxShadow(
+                color: Color.fromARGB(35, 72, 72, 1),
+                offset: Offset(0, 0),
+                blurRadius: 15.0,
+              )
+            ],
           ),
           child: Row(
             children: [
-              SizedBox(width: 50,),
+              SizedBox(
+                width: 50,
+              ),
               Expanded(
                 flex: 1,
                 child: Container(
@@ -88,30 +106,28 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Text(
                         "input/edit waste data",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 24),
                       ),
                       SizedBox(height: 15),
                       TextField(
                         controller: _WasteNameController,
-                        decoration: new InputDecoration(labelText: "Waste Name (max 20 characters)"),
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(20)
-
-                        ],
+                        decoration: new InputDecoration(
+                            labelText: "Waste Name (max 20 characters)"),
+                        inputFormatters: [LengthLimitingTextInputFormatter(20)],
                       ),
                       SizedBox(height: 10),
                       TextField(
                         controller: _WasteSourceController,
-                        decoration: new InputDecoration(labelText: "Waste Source (max 50 characters)"),
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(50)
-
-                        ],
+                        decoration: new InputDecoration(
+                            labelText: "Waste Source (max 50 characters)"),
+                        inputFormatters: [LengthLimitingTextInputFormatter(50)],
                       ),
                       SizedBox(height: 10),
                       TextField(
                         controller: _WasteVolume,
-                        decoration: new InputDecoration(labelText: "Waste Volume (value in kgs)"),
+                        decoration: new InputDecoration(
+                            labelText: "Waste Volume (value in kgs)"),
                         keyboardType: TextInputType.number,
                         inputFormatters: <TextInputFormatter>[
                           FilteringTextInputFormatter.digitsOnly
@@ -121,14 +137,34 @@ class _HomePageState extends State<HomePage> {
                       SizedBox(height: 10),
                       TextFormField(
                         controller: _Wastedesc,
-                        decoration: new InputDecoration(labelText: "Waste Description (max 100 characters)"),
+                        decoration: new InputDecoration(
+                            labelText:
+                                "Waste Description (max 100 characters)"),
                         inputFormatters: [
                           LengthLimitingTextInputFormatter(100)
-
                         ],
                       ),
                       SizedBox(height: 15),
-
+                      TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          labelText: "Search by Waste Name",
+                          prefixIcon: Icon(Icons.search),
+                          filled: true,
+                          fillColor: Colors.grey.shade200, // Light gray color
+                          contentPadding: EdgeInsets.all(10), // Adjust content padding if needed
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15.0), // Set border radius to 5px
+                            borderSide: BorderSide(color: Colors.transparent), // Remove border
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: BorderSide(color: Colors.transparent), // Remove border
+                          ),
+                          floatingLabelBehavior: FloatingLabelBehavior.never
+                        ),
+                        onChanged: (value) => _searchWaste(value),
+                      ),
                       SizedBox(height: 15),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -144,18 +180,20 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               );
                               showToast(message: "Data Created");
-                              clearFields(); // Clear fields after creating data
+                              clearFields();
                             },
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(Colors.green),
-                              foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-                                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                                backgroundColor:
+                                    MaterialStateProperty.all<Color>(
+                                        Colors.green),
+                                foregroundColor:
+                                    MaterialStateProperty.all<Color>(
+                                        Colors.white),
+                                shape: MaterialStateProperty.all<
+                                        RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10)
-                                    )
-                                )
-
-                            ),
+                                        borderRadius:
+                                            BorderRadius.circular(10)))),
                             child: Text("Create Data"),
                           ),
                           ElevatedButton(
@@ -163,43 +201,59 @@ class _HomePageState extends State<HomePage> {
                               if (selectedWasteModel != null) {
                                 _updateData(selectedWasteModel!);
                                 showToast(message: "Data Edited");
-                                clearFields(); // Clear fields after editing data
+                                clearFields();
                               } else {
-                                showToast(message: "Please select a waste to edit");
+                                showToast(
+                                    message: "Please select a waste to edit");
                               }
                             },
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(Colors.green),
-                              foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-                                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                                backgroundColor:
+                                    MaterialStateProperty.all<Color>(
+                                        Colors.green),
+                                foregroundColor:
+                                    MaterialStateProperty.all<Color>(
+                                        Colors.white),
+                                shape: MaterialStateProperty.all<
+                                        RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10)
-                                    )
-                                )
-
-                            ),
+                                        borderRadius:
+                                            BorderRadius.circular(10)))),
                             child: Text("Edit Data"),
                           ),
                         ],
                       ),
-                      SizedBox(height: 15,),
-                      ElevatedButton(onPressed: downloadWasteData, child: Text("Copy Data"),
-                          style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all<Color>(Colors.green),
-                          foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-                            shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)
-                              )
-                            )
-                          ),)
+                      SizedBox(
+                        height: 15,
+                      ),
+                      ElevatedButton(
+                        onPressed: downloadWasteData,
+                        child: Text("Copy Data"),
+                        style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.all<Color>(Colors.green),
+                            foregroundColor:
+                                MaterialStateProperty.all<Color>(Colors.white),
+                            shape: MaterialStateProperty.all<
+                                    RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)))),
+                      )
                     ],
                   ),
                 ),
               ),
-              SizedBox(width: 50,),
-              Container(width: 2, height: double.infinity ,color: Colors.grey,),
-              SizedBox(width: 50,),
+              SizedBox(
+                width: 50,
+              ),
+              Container(
+                width: 2,
+                height: double.infinity,
+                color: Colors.grey,
+              ),
+              SizedBox(
+                width: 50,
+              ),
               Expanded(
                 flex: 2, // Make the list section wider
                 child: StreamBuilder<List<WasteModel>>(
@@ -213,46 +267,94 @@ class _HomePageState extends State<HomePage> {
                     if (snapshot.data!.isEmpty) {
                       return Center(child: Text("No Data"));
                     }
-                    final users = snapshot.data;
-                    return ListView.builder(
-                      itemCount: users!.length,
-                      itemBuilder: (context, index) {
-                        final waste = users[index];
-                        return ListTile(
-                          leading: GestureDetector(
-                            child: Icon(Icons.delete),
-                            onTap: () {
-                              _deleteData(waste.id!);
-                              showToast(message: "Data Deleted");
-                            },
-                          ),
-                          trailing: GestureDetector(
-                            onTap: () {
-                              // Update selectedWasteModel and pre-fill fields
-                              setState(() {
-                                selectedWasteModel = waste;
-                                _WasteNameController.text = waste.wastename ?? "";
-                                _WasteSourceController.text =
-                                    waste.wastesource ?? "";
-                                _WasteVolume.text =
-                                    waste.wastevolume?.toString() ?? "";
-                                _Wastedesc.text = waste.wastedesc ?? "";
-                              });
-                            },
-                            child: Icon(Icons.edit),
-                          ),
-                          title: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(waste.wastename ?? "No Name"),
-                              Text(waste.wastesource ?? "No Source"),
-                              Text("Waste Volume: ${waste.wastevolume ?? 0} Kg"),
-                              Text(waste.wastedesc ?? "No Description"),
-                            ],
-                          ),
-                        );
-                      },
-                    );
+
+                    // Check if there's a search term
+                    if (_searchController.text.isNotEmpty) {
+                      return ListView.builder(
+                        itemCount: _filteredWaste.length,
+                        itemBuilder: (context, index) {
+                          final waste = _filteredWaste[index];
+                          return ListTile(
+                            leading: GestureDetector(
+                              child: Icon(Icons.delete),
+                              onTap: () {
+                                _deleteData(waste.id!);
+                                showToast(message: "Data Deleted");
+                              },
+                            ),
+                            trailing: GestureDetector(
+                              onTap: () {
+                                // Update selectedWasteModel and pre-fill fields
+                                setState(() {
+                                  selectedWasteModel = waste;
+                                  _WasteNameController.text =
+                                      waste.wastename ?? "";
+                                  _WasteSourceController.text =
+                                      waste.wastesource ?? "";
+                                  _WasteVolume.text =
+                                      waste.wastevolume?.toString() ?? "";
+                                  _Wastedesc.text = waste.wastedesc ?? "";
+                                });
+                              },
+                              child: Icon(Icons.edit),
+                            ),
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(waste.wastename ?? "No Name"),
+                                Text(waste.wastesource ?? "No Source"),
+                                Text(
+                                    "Waste Volume: ${waste.wastevolume ?? 0} Kg"),
+                                Text(waste.wastedesc ?? "No Description"),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    } else {
+                      final users = snapshot.data;
+                      return ListView.builder(
+                        itemCount: users!.length,
+                        itemBuilder: (context, index) {
+                          final waste = users[index];
+                          return ListTile(
+                            leading: GestureDetector(
+                              child: Icon(Icons.delete),
+                              onTap: () {
+                                _deleteData(waste.id!);
+                                showToast(message: "Data Deleted");
+                              },
+                            ),
+                            trailing: GestureDetector(
+                              onTap: () {
+                                // Update selectedWasteModel and pre-fill fields
+                                setState(() {
+                                  selectedWasteModel = waste;
+                                  _WasteNameController.text =
+                                      waste.wastename ?? "";
+                                  _WasteSourceController.text =
+                                      waste.wastesource ?? "";
+                                  _WasteVolume.text =
+                                      waste.wastevolume?.toString() ?? "";
+                                  _Wastedesc.text = waste.wastedesc ?? "";
+                                });
+                              },
+                              child: Icon(Icons.edit),
+                            ),
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(waste.wastename ?? "No Name"),
+                                Text(waste.wastesource ?? "No Source"),
+                                Text(
+                                    "Waste Volume: ${waste.wastevolume ?? 0} Kg"),
+                                Text(waste.wastedesc ?? "No Description"),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }
                   },
                 ),
               ),
@@ -263,34 +365,24 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Stream<List<WasteModel>> _readData() {
+  Stream<List<WasteModel>> _readData() async* {
     final wasteCollection = FirebaseFirestore.instance.collection("waste");
-
-    return wasteCollection.snapshots().map((querySnapshot) =>
-        querySnapshot.docs.map((waste) => WasteModel.fromSnapshot(waste)).toList());
+    QuerySnapshot<Map<String, dynamic>> querySnapshot =
+        await wasteCollection.get();
+    _wasteData = querySnapshot.docs
+        .map((waste) => WasteModel.fromSnapshot(waste))
+        .toList();
+    yield _wasteData; // Emit the initial data
   }
-  Future<void> downloadWasteData() async {
-    try {
-      final wasteCollection = FirebaseFirestore.instance.collection("waste");
-      final QuerySnapshot<Map<String, dynamic>> querySnapshot = await wasteCollection.get();
 
-      // Prepare CSV data
-      List<Map<String, dynamic>> wasteData = [];
-      for (var doc in querySnapshot.docs) {
-        wasteData.add(doc.data());
-      }
-
-      // Convert data to CSV string
-      String csvData = ListToCsvConverter().convert(wasteData);
-
-      // Copy to clipboard
-      Clipboard.setData(ClipboardData(text: csvData));
-      showToast(message: "Waste data copied to clipboard!");
-
-    } catch (e) {
-      showToast(message: "Error downloading data: $e");
-    }
+  void _searchWaste(String searchTerm) {
+    _filteredWaste = _wasteData
+        .where((waste) =>
+            waste.wastename!.toLowerCase().contains(searchTerm.toLowerCase()))
+        .toList();
+    setState(() {}); // Update UI to reflect changes
   }
+
   void _createData(WasteModel wasteModel) {
     final wasteCollection = FirebaseFirestore.instance.collection("waste");
     String id = wasteCollection.doc().id;
@@ -310,7 +402,7 @@ class _HomePageState extends State<HomePage> {
     final wasteCollection = FirebaseFirestore.instance.collection("waste");
 
     final newData = WasteModel(
-      wastename: _WasteNameController.text, // Use updated values from controllers
+      wastename: _WasteNameController.text,
       wastesource: _WasteSourceController.text,
       wastevolume: int.parse(_WasteVolume.text),
       wastedesc: _Wastedesc.text,
@@ -330,7 +422,30 @@ class _HomePageState extends State<HomePage> {
     _WasteSourceController.clear();
     _WasteVolume.clear();
     _Wastedesc.clear();
-    selectedWasteModel = null; // Clear selectedWasteModel after editing or creating
+    selectedWasteModel = null;
+  }
+
+  Future<void> downloadWasteData() async {
+    try {
+      final wasteCollection = FirebaseFirestore.instance.collection("waste");
+      final QuerySnapshot<Map<String, dynamic>> querySnapshot =
+          await wasteCollection.get();
+
+      // Prepare CSV data
+      List<Map<String, dynamic>> wasteData = [];
+      for (var doc in querySnapshot.docs) {
+        wasteData.add(doc.data());
+      }
+
+      // Convert data to CSV string
+      String csvData = ListToCsvConverter().convert(wasteData);
+
+      // Copy to clipboard
+      Clipboard.setData(ClipboardData(text: csvData));
+      showToast(message: "Waste data copied to clipboard!");
+    } catch (e) {
+      showToast(message: "Error downloading data: $e");
+    }
   }
 }
 
